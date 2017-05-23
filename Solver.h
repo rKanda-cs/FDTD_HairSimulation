@@ -99,6 +99,10 @@ public:
 		ray_coef = 1-exp(-0.0001*time*time);	//”g‚ª•s˜A‘±‚É“üË‚³‚ê‚é‚Ì‚ğ–h‚®‚½‚ß‚ÌŒW”
 		if (((int)time) % 100 == 0)		cout << time << endl;
 /*
+		if ((int)time == 1)
+			modelCheck();		//U—‘Ìƒ‚ƒfƒ‹‚ğcapture‚µ‚ÄI—¹
+*/		
+/*
 		if (((int)time) % 100 == 1) {
 			ostringstream oss;
 			oss << std::setfill('0') << std::right << std::setw(5) << time - 1;
@@ -112,6 +116,7 @@ protected:
 	void draw(Complex *p);
 	void draw(Complex *p, Complex *q);
 	void draw_model();
+	void modelCheck();
 
 	//---------------------------------------------------------//
 	//--------------------“üË”g-------------------------------//

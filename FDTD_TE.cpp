@@ -112,7 +112,9 @@ void FDTD_TE::Initialize(){
 void FDTD_TE::field(){
 	setWorkingDirPass(mModel->mkdir(getDataDirPass()));	//データを保存するディレクトリの設定
 	setWorkingDirPass(MakeDir("TE"));
-
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNpx(); i++){
 		for(int j=0; j<mField->getNpy(); j++){
 			EPSEX(i,j) = mModel->calcEPS(i+0.5,j    , D_Y);
@@ -133,6 +135,9 @@ void FDTD_TE::NsScatteredWave(int ang){
 	//double a = (1-exp(-_pow(0.01*time,2)));		//不連続に入射されるのを防ぐ為の係数
 	double a = ray_coef;
 	double n, u0, u1, _n;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=mField->getNpml(); i<mField->getNpx() - mField->getNpml(); i++){
 		for(int j=mField->getNpml(); j<mField->getNpy() - mField->getNpml(); j++){
 			if(EPSEY(i,j) == EPSILON_0_S && EPSEX(i,j) == EPSILON_0_S) continue;
@@ -158,6 +163,9 @@ void FDTD_TE::NsScatteredWave(int ang){
 void FDTD_TE::IncidentWave(int ang){
 	double rad = ang*M_PI/180;	//ラジアン変換
 	double _cos = cos(rad), _sin = sin(rad);	//毎回計算すると時間かかりそうだから,代入しておく
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNx(); i++){
 		for(int j=0; j<mField->getNy(); j++){
 			double ikx = k_s*(i*_cos + j*_sin);
@@ -170,6 +178,9 @@ void FDTD_TE::IncidentWave(int ang){
 void FDTD_TE::IncidentWaveH(int ang){
 	double rad = ang*M_PI/180;	//ラジアン変換
 	double _cos = cos(rad), _sin = sin(rad);	//毎回計算すると時間かかりそうだから,代入しておく
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNx(); i++){
 		for(int j=0; j<mField->getNy(); j++){
 			double ikx = k_s*(i*_cos + j*_sin);

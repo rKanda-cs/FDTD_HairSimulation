@@ -9,6 +9,7 @@
 #include <glut.h>
 #include <fstream>
 #include <iostream>
+#include <omp.h>
 
 #define new ::new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define _USE_MATH_DEFINES
@@ -16,7 +17,7 @@
 Solver::Solver()
 	:H_S(1.0), DT_S(1.0)
 {
-	mField = new Field(128000, 128000, 100, 10); //width, height, Δh, Npml
+	mField = new Field(32000, 128000, 50, 10); //width, height, Δh, Npml
 	LambdaRange    = Range<double>(Nano_S(380), Nano_S(700), Nano_S(10));
 	WaveAngleRange = Range<int>   (135, 135, 30);
 
@@ -25,7 +26,7 @@ Solver::Solver()
 
 	time = 0;
 	maxStep  = 8000;
-	mField->sig = true;		//吸収係数σの有無　有：true / 無：false (FazzyHair_incidenceModelのみ選択、 その他の場合false)
+	mField->sig = false;		//吸収係数σの有無　有：true / 無：false (FazzyHair_incidenceModelのみ選択、 その他の場合false)
 
 	n_s     = new double[mField->getNcel()];	//屈折率
 	Sig_hair = new double[mField->getNcel()];	//吸光率
@@ -35,11 +36,19 @@ Solver::Solver()
 	mModel	= new FazzyHair_incidenceModel(mField);
 	//mModel	= new FazzyHair_normalModel(mField);
 	//mModel	= new FazzyHair_NONcuticleModel(mField);
-	
+
 	DataDir		=  "../DataSet/";
 	WorkingDir  =  "";
 
 	cout << "Solver Constructor" << endl;
+
+#ifdef _OPENMP
+	cout << "OpenMP used" << endl;
+	cout << "The number of processors is " << omp_get_num_procs() << endl;
+	cout << "OpenMP : Enabled (Max # of threads = " << omp_get_max_threads() << ")" << endl;
+#else
+	cout << "OpenMP not used" << endl;
+#endif
 }
 
 Solver::~Solver(){
@@ -368,6 +377,12 @@ void Solver::draw_model(){
 		glRectd(x*ws-1, y*hs-1, (x+1.0)*ws-1, (y+1.0)*hs-1);	
 		}
 	}
+
+}
+
+void Solver::modelCheck() {
+	capture("../../model");
+	exit(-1);
 }
 
 //-----------------データの保存----------------------//

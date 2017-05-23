@@ -122,7 +122,7 @@ double FazzyHair_incidenceModel::calcEPS(const double& x, const double& y, enum 
 
 	/***************************************************/
 	//上面だけキューティクルなし
-	if (y - mField->getNpml() >= mField->nanoToCell(32 * 1000) + cy)	return ep2;
+//	if (y - mField->getNpml() >= mField->nanoToCell(32 * 1000) + cy)	return ep2;
 	/***************************************************/
 
 

@@ -117,6 +117,9 @@ void FDTD_TM::SaveData(string prefix){
 void FDTD_TM::field(){
 	setWorkingDirPass(mModel->mkdir(getDataDirPass()));	//データを保存するディレクトリの設定
 	setWorkingDirPass(MakeDir("TM"));
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNpx(); i++){
 		for(int j=0; j<mField->getNpy(); j++){
 			EPSEZ(i,j) = mModel->calcEPS(i,j);
@@ -136,6 +139,9 @@ void FDTD_TM::NsScatteredWave(int ang){
 	double _cos = cos(rad)*k_s;	//毎回計算すると時間かかりそうだから,代入しておく
 	double _sin = sin(rad)*k_s;	
 	//double a = (1-exp(-_pow(0.01*time,2)));		//不連続に入射されるのを防ぐ為の係数
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=mField->getNpml(); i<mField->getNpx()-mField->getNpml(); i++){
 		for(int j=mField->getNpml(); j<mField->getNpy()-mField->getNpml(); j++){
 			if(EPSEZ(i,j) == EPSILON_0_S) continue;
@@ -157,6 +163,9 @@ void FDTD_TM::IncidentWave(int ang){
 	double _cos = cos(rad), _sin = sin(rad);	//毎回計算すると時間かかりそうだから,代入しておく
 	//double a = (1-exp(-_pow(0.01*time,2)));		//不連続に入射されるのを防ぐ為の係数
 	double a = ray_coef;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNx()-1; i++){
 		for(int j=0; j<mField->getNy()-1; j++){
 			double ikx = k_s*(i*_cos + j*_sin);
@@ -172,6 +181,9 @@ void FDTD_TM::IncidentWaveH(int ang){
 	double _cos = cos(rad), _sin = sin(rad);	//毎回計算すると時間かかりそうだから,代入しておく
 	//double a = (1-exp(-_pow(0.01*time,2)));		//不連続に入射されるのを防ぐ為の係数
 		double a = ray_coef;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(int i=0; i<mField->getNx()-1; i++){
 		for(int j=0; j<mField->getNy()-1; j++){
 			double ikx = k_s*(i*_cos + j*_sin);

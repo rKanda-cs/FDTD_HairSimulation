@@ -82,6 +82,9 @@ void NsFDTD_TM::field(){
 void NsFDTD_TM::PMLfield() {
 	double mu = MU_0_S;
 
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for (int i = 0; i < mField->getNpx(); i++) {
 		for (int j = 0; j < mField->getNpy(); j++) {
 			double sig_x = mField->sigmaX(i, j);			//É–x, É–x*, É–y, É–y* Å@Å@<- B-PMLÇÃåWêî

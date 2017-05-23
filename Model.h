@@ -66,8 +66,8 @@ public:
 
 class FazzyHair_incidenceModel :public FazzyModel {
 	const double ep1, ep2;
-	const int alpha, cwidth, r;
-	double alphaR, length, ln, lx, ly, rn;
+	const int alpha;
+	double alphaR, length, ln, lx, ly, rn, cwidth, r;
 public:
 	FazzyHair_incidenceModel(Field*);
 	string mkdir(string root);
