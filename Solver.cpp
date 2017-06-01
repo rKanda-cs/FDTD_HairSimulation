@@ -33,7 +33,8 @@ Solver::Solver()
 
 	//mModel	= new FazzySlabModel(mField);
 	//mModel	= new FazzyMieModel(mField, lambda_s);
-	mModel	= new FazzyHair_incidenceModel(mField);
+	//mModel	= new FazzyHair_incidenceModel(mField);
+	mModel = new FazzyHair_incidenceLayerModel(mField);
 	//mModel	= new FazzyHair_normalModel(mField);
 	//mModel	= new FazzyHair_NONcuticleModel(mField);
 
@@ -322,7 +323,7 @@ void Solver::draw(Complex *p, Complex *q){
 			Color c = color( norm(p[index(i,j)] + q[index(i,j)]) );
 			//Color c = color(30.0*(p[index(i,j)].real() + q[index(i,j)].real()));
 			glColor3d(c.red, c.green, c.blue);
-			if(j==mField->getNpy()/2 || i==mField->getNpx()/2) glColor3d(1,1,1);
+//			if(j==mField->getNpy()/2 || i==mField->getNpx()/2) glColor3d(1,1,1);
 			
 			glRectd(x*ws-1, y*hs-1, (x+1.0)*ws-1, (y+1.0)*hs-1);
 				
@@ -345,7 +346,7 @@ void Solver::draw(Complex *p){
 			Color c = color( norm(p[index(i,j)]) );
 			//Color c = color(30.0*p[index(i,j)].real());
 			glColor3d(c.red, c.green, c.blue);
-			if(j==mField->getNpy()/2 || i==mField->getNpx()/2) glColor3d(1,1,1);
+//			if(j==mField->getNpy()/2 || i==mField->getNpx()/2) glColor3d(1,1,1);
 			
 			glRectd(x*ws-1, y*hs-1, (x+1.0)*ws-1, (y+1.0)*hs-1);
 				

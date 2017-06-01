@@ -33,7 +33,7 @@ double FazzyMieModel::calcEPS(const double& x, const double& y, enum INTEG f){
 
 		return EPSILON_0_S;
 
-	//中心との距離が, 半径-√2/2セル以内なら, 完全に媒質の外
+	//中心との距離が, 半径-√2/2セル以内なら, 完全に媒質の中
 	if(_x*_x + _y*_y <= pow(r-1, 2.0))
 		return ep;
 
@@ -94,7 +94,7 @@ string FazzySlabModel::mkdir(string root){
 /*----------------------------*/
 FazzyHair_incidenceModel::FazzyHair_incidenceModel(Field* f) :
 	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), alpha(3), cwidth(1), r(32+(8-cwidth))
-	//alpha:キューティクルの角度(deg)  length:キューティクルの幅(μm)  r:毛の半径(μm)(半径+キューティクルが重なる領域)
+	//alpha:キューティクルの角度(deg)  cwidth:キューティクルの幅(μm)  r:毛の半径(μm)(半径+キューティクルが重なる領域)
 {
 	alphaR = alpha * PI / 180;
 	length = cwidth / sin(alphaR);
@@ -199,6 +199,137 @@ string FazzyHair_incidenceModel::mkdir(string root) {
 
 	_mkdir((root + name).c_str());	//ディレクトリの作成
 	
+	return name + "/";
+}
+
+/*--------------------------------------------------*/
+/*-----------縦断面(多層膜キューティクル)-----------*/
+/*--------------------------------------------------*/
+FazzyHair_incidenceLayerModel::FazzyHair_incidenceLayerModel(Field* f) :
+	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), alpha(5), cwidth(0.5), length(50), r(32), cmc(0.06)
+	//alpha:キューティクルの角度(deg)  cwidth:キューティクルの厚さ(μm)  length:キューティクルの長さ(μm)	r:毛皮質範囲の半径(μm)  cmc:CMC範囲(μm)
+{
+	alphaR = alpha * PI / 180;
+	int n = length * sin(alphaR) / (cmc + cwidth);
+
+	cout << "キューティクルの角度 : " + to_s(alpha) + "deg" << endl;
+	cout << "キューティクル厚さ : " + to_s(cwidth) + "micro" << endl;
+	cout << "キューティクル長さ : " + to_s(length) + "micro" << endl;
+	cout << "キューティクル1枚の露出幅 : " + to_s((cmc+cwidth)/sin(alphaR)) + "micro" << endl;
+	cout << "キューティクル範囲幅 : " + to_s(length*sin(alphaR)) + "micro" << endl;
+	cout << "キューティクル重なり枚数 : " + to_s(n) + "枚" << endl;
+}
+
+double FazzyHair_incidenceLayerModel::calcEPS(const double& x, const double& y, enum INTEG f) {
+	alphaR = alpha * PI / 180;
+	ln = mField->nanoToCell(length * 1000);
+	lx = ln * cos(alphaR);
+	ly = ln * sin(alphaR);
+	rn = mField->nanoToCell(r * 1000);
+	cn = mField->nanoToCell(cwidth * 1000);
+	mn = mField->nanoToCell(cmc * 1000);
+
+	double mx = x - mField->getNpml(); //計算領域内へ写像
+	double my = y - mField->getNpml();
+	double cx = mField->getNx() / 2;
+	double cy = mField->getNy() / 2;
+
+	if (mx < 0 || my < 0 || mx >= mField->getNx() || my >= mField->getNy()) return ep2;	//PML層
+
+	/**** 毛髪全体 ****/
+	if (my < cy)	my = 2 * cy - my;		//x軸に対して線対称
+	if (my <= rn + cy)		return ep1;		//毛皮質部分
+	my = my - rn - cy;		//軸移動
+
+	/****************** キューティクル部分のみ ******************/
+	/* Field推奨サイズ                                          */
+	/* Field(8000, 8000, 5, 10) Field(16000, 8000, 10, 10) など */
+	/************************************************************/
+//	if (my <= 100)		return ep1;		//毛皮質部分
+//	my = my - 100;		//軸移動
+
+
+	if (my > ly)	return ep2;
+	for (int i = -(ly / (cn + mn)); (i*mn + i*cn) / tan(alphaR) < mField->getNx(); i++) {
+		if (my <= ly - cn) {
+			if (my >= tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) + 1 && my <= tan(alphaR) * (mx - (i*mn + i*cn) / tan(alphaR)) - 1)
+				return ep1;
+
+			else if (my >= tan(alphaR) * (mx - ((i + 1)*mn + (i + 1)*cn) / tan(alphaR)) + 1 && my <= tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) - 1)
+				return ep2;
+
+			else if ((my > tan(alphaR) * (mx - (i*mn + i*cn) / tan(alphaR)) - 1 && my < tan(alphaR) * (mx - (i*mn + i*cn) / tan(alphaR)) + 1)
+				|| (my > tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) - 1 && my < tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) + 1)) {
+				
+				double s = 0;
+				for (double a = -16; a < 16; a += 1)
+					for (double b = -16; b < 16; b += 1)
+						if (my + b / 32.0 >= tan(alphaR) * (mx + a / 32.0 - (i*mn + (i + 1)*cn) / tan(alphaR)) && my + b / 32.0 <= tan(alphaR) * (mx + a / 32.0 - (i*mn + i*cn) / tan(alphaR)) && mx <= (ly + i*mn + i*cn) / tan(alphaR))
+							s += 1;
+				s /= 32.0*32.0;
+				return ep1*s + ep2*(1 - s);
+				
+			}
+			
+		}
+		else if (my > ly - cn) {
+			if (mx >= (my + i*mn + i*cn + 1) / tan(alphaR) && mx <= (ly + i*mn + i*cn) / tan(alphaR))
+				return ep1;
+
+			else if (mx < (my + i*mn + i*cn + 1) / tan(alphaR) && mx >(my + i*mn + i*cn - 1) / tan(alphaR)) {
+
+				double s = 0;
+				for (double a = -16; a < 16; a += 1)
+					for (double b = -16; b < 16; b += 1)
+						if (mx + a / 32.0 >= (my + b / 32.0 + i*mn + i*cn) / tan(alphaR) && mx <= (ly + i*mn + i*cn) / tan(alphaR))
+							s += 1;
+				s /= 32.0*32.0;
+				return ep1*s + ep2*(1 - s);
+			}	
+		}
+	}
+
+	return ep2;
+}
+
+double FazzyHair_incidenceLayerModel::calcSIG(const double& x, const double& y, const double lam, enum INTEG f) {
+	rn = mField->nanoToCell(32 * 1000);
+
+	double mx = x - mField->getNpml(); //計算領域内へ写像
+	double my = y - mField->getNpml();
+	double cx = mField->getNx() / 2;
+	double cy = mField->getNy() / 2;
+
+	double h = mField->nanoToCell(0 * 1000);
+
+	if (mx < 0 || my < 0 || mx >= mField->getNx() || my >= mField->getNy()) return 0;	//PML層
+	if (my < cy)	my = 2 * cy - my;		//x軸に対して線対称
+
+	if (my <= rn + cy) {
+		int k = (int)(mField->cellToNano(my) - mField->cellToNano(cy) - 1500) % 4000;
+		double l = (mField->cellToNano(my) - mField->cellToNano(cy) - 1500) / 4000;
+
+		if (k > 0 && k <= 1000 && l < 8)	return 1.0;		//黒色の色素
+		else	return 0;
+	}
+	else  return 0;
+}
+
+string FazzyHair_incidenceLayerModel::mkdir(string root) {
+	_mkdir((root + "HairModel").c_str());
+	string name;
+
+	if (mField->sig == false) {
+		_mkdir((root + "HairModel/incidenceLayer").c_str());				//吸収係数なしの場合
+		name = "HairModel/incidenceLayer/" + mField->getStringCellInfo();
+	}
+	else if (mField->sig == true) {
+		_mkdir((root + "HairModel/incidenceLayer_withSig").c_str());		//吸収係数ありの場合
+		name = "HairModel/incidenceLayer_withSig/" + mField->getStringCellInfo();
+	}
+
+	_mkdir((root + name).c_str());	//ディレクトリの作成
+
 	return name + "/";
 }
 
