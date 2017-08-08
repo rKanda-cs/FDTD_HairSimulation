@@ -19,14 +19,14 @@ Solver::Solver()
 {
 	mField = new Field(32000, 128000, 50, 10); //width, height, Δh, Npml
 	LambdaRange    = Range<double>(Nano_S(380), Nano_S(700), Nano_S(10));
-	WaveAngleRange = Range<int>   (135, 135, 30);
+	WaveAngleRange = Range<int>   (135, 135, 10);
 
 	SetWaveParameter( LambdaRange.MIN() );
 	wave_angle  = WaveAngleRange.MIN();
 
 	time = 0;
 	maxStep  = 8000;
-	mField->sig = false;		//吸収係数σの有無　有：true / 無：false (FazzyHair_incidenceModelのみ選択、 その他の場合false)
+	mField->sig = false;		//吸収係数σの有無　有：true / 無：false (FazzyHair_incidence(Layer)Modelのみ選択、 その他の場合false)
 
 	n_s     = new double[mField->getNcel()];	//屈折率
 	Sig_hair = new double[mField->getNcel()];	//吸光率
@@ -34,7 +34,7 @@ Solver::Solver()
 	//mModel	= new FazzySlabModel(mField);
 	//mModel	= new FazzyMieModel(mField, lambda_s);
 	//mModel	= new FazzyHair_incidenceModel(mField);
-	mModel = new FazzyHair_incidenceLayerModel(mField);
+	mModel	= new FazzyHair_incidenceLayerModel(mField);
 	//mModel	= new FazzyHair_normalModel(mField);
 	//mModel	= new FazzyHair_NONcuticleModel(mField);
 
@@ -432,6 +432,7 @@ void Solver::capture(string name)
 	cv::flip(cvmtx, cvmtx, 0);
 	// 画像の書き出し 
 	cv::imwrite(DataDir + name + ".jpg", cvmtx);
+	cout << "image captured" << endl;
 }
 
 //---------------------------------------------//

@@ -31,6 +31,8 @@ bool NsFDTD_TM::calc() {
 		//MiePrint(Ez, "time"+to_s(maxStep)+"_PML"+to_s(mField->getNpml()) + "_NsTM_");
 		//capture(to_s(time));
 		capture(to_s(Inv_Nano_S(lambda_s)));
+//		if ((int)Inv_Nano_S(lambda_s) == 380 | (int)Inv_Nano_S(lambda_s) == 440 | (int)Inv_Nano_S(lambda_s) == 550 | (int)Inv_Nano_S(lambda_s) == 700)
+//			capture(to_s(wave_angle) + "deg_" + to_s(Inv_Nano_S(lambda_s)) + "nm");
 		return EndTask();
 	}
 

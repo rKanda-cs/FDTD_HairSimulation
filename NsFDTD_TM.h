@@ -21,6 +21,14 @@ private:
 		return (p[index(i+1,j, t)] + p[index(i-1, j, t)] - p[index(i+1,j-1, t)] - p[index(i-1, j-1, t)])/2.0;
 	}
 
+	complex<double> Dx2_n(complex<double> *p, int i, int j) {		//·•ª‰‰Zqd'2‚Ì¬•ª
+		return (p[index(i, j + 1)] + p[index(i, j - 1)] - p[index(i - 1, j + 1)] - p[index(i - 1, j - 1)]) / 2.0;
+	};
+
+	complex<double> Dy2_n(complex<double> *p, int i, int j) {
+		return (p[index(i + 1, j)] + p[index(i - 1, j)] - p[index(i + 1, j - 1)] - p[index(i - 1, j - 1)]) / 2.0;
+	}
+
 	//todo ‹«ŠE‹ß–T‚ÉS-FDTD‚ğg‚Á‚Ä‚È‚¢
 	void CalcE() {
 		int Npml = mField->getNpml();
@@ -119,6 +127,7 @@ private:
 //					if (i < Npml || i > mField->getNpx() - Npml - 1 || j < Npml || j > mField->getNpy() - Npml - 1)
 						HX(i, j, +1) = BHYP(i, j) * BHYM(i, j) * HX(i, j, 0) 
 							- BHYP(i, j)*CHXLY(i, j)*(R_P*(EZ(i, j+1, +1) - EZ(i, j, +1)) + R_M*Dy2_n(Ez, i, j+1, +1));	//Hx‚ÌŒvZ Hx(i, j+1/2) -> Hx[i,j]
+	
 				}
 			}
 
@@ -130,6 +139,7 @@ private:
 //					if (i < Npml || i > mField->getNpx() - Npml - 1 || j < Npml || j > mField->getNpy() - Npml - 1)
 						HY(i, j, +1) = BHXP(i, j) * BHXM(i, j) * HY(i, j, 0) 
 							+ BHXP(i, j)*CHYLX(i, j)*(R_P*(EZ(i+1, j, +1) - EZ(i, j, +1)) + R_M*Dx2_n(Ez, i+1, j, +1));	//Hy‚ÌŒvZ Hy(i+1/2, j) -> Hy[i,j]
+			
 				}
 			}
 

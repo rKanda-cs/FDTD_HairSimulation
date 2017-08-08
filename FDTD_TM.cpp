@@ -15,11 +15,17 @@ FDTD_TM::FDTD_TM()
 :Solver()
 {
 	//領域確保
-	Ez  = new complex<double>[3*mField->getNcel()];		//Ez(i,j)      → Ez(i,j)
+/*	Ez  = new complex<double>[3*mField->getNcel()];		//Ez(i,j)      → Ez(i,j)
 	Hx  = new complex<double>[3*mField->getNcel()];		//Hx(i, j+0.5) → Hx(i,j)
 	Hy  = new complex<double>[3*mField->getNcel()];		//Hy(i+0.5, j) → Hy(i,j) を意味する
 	Ezx = new complex<double>[3*mField->getNcel()];
 	Ezy = new complex<double>[3*mField->getNcel()];
+*/
+	Ez = new complex<double>[mField->getNcel()];		//Ez(i,j)      → Ez(i,j)
+	Hx = new complex<double>[mField->getNcel()];		//Hx(i, j+0.5) → Hx(i,j)
+	Hy = new complex<double>[mField->getNcel()];		//Hy(i+0.5, j) → Hy(i,j) を意味する
+	Ezx = new complex<double>[mField->getNcel()];
+	Ezy = new complex<double>[mField->getNcel()];
 
 	//計算用定数配列
 	C_EZ     = new double[mField->getNcel()];	//Cez(i, j)       → CEZ(i,j)
@@ -50,7 +56,8 @@ FDTD_TM::FDTD_TM()
 	B_HYm = new double[mField->getNcel()];
 
 	//領域初期化
-	for(int i=0; i<3*mField->getNcel(); i++)
+//	for(int i=0; i<3*mField->getNcel(); i++)
+	for(int i=0; i<mField->getNcel(); i++)
 			Ez[i] = Hx[i] = Hy[i] = Ezx[i] = Ezy[i] = 0;
 
 	cout << "FDTD_TM Constructor" << endl;
@@ -93,8 +100,9 @@ FDTD_TM::~FDTD_TM(){
 void FDTD_TM::Initialize(){
 	super::Initialize();
 	//領域初期化
-	for(int i=0; i<3*mField->getNcel(); i++)
-			Ez[i] = Hx[i] = Hy[i] = Ezx[i] = Ezy[i] = 0;
+//	for(int i=0; i<3*mField->getNcel(); i++)
+	for(int i=0; i<mField->getNcel(); i++)
+		Ez[i] = Hx[i] = Hy[i] = Ezx[i] = Ezy[i] = 0;
 }
 
 void FDTD_TM::OpenData(string prefix){
@@ -228,8 +236,8 @@ void FDTD_TM::NTFFindexform(string label, NTFF::output flag){
 	double strength[360];
 	int max_angle = 360;
 	for(int ang=0; ang<max_angle; ang++){
-		//double rad = ang*M_PI/180.0;
-		double rad = (ang-90)*M_PI / 180.0;
+		double rad = ang*M_PI/180.0;			//0(deg)startとするとき
+		//double rad = (ang-90)*M_PI / 180.0;	//270(deg)startとするとき
 		Vec2<double> r(cos(rad), sin(rad));		//遠方の方向ベクトル.
 		Vec2<double> r2;						//中心からセルまでの距離
 

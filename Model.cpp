@@ -93,7 +93,7 @@ string FazzySlabModel::mkdir(string root){
 /*-----------縦断面-----------*/
 /*----------------------------*/
 FazzyHair_incidenceModel::FazzyHair_incidenceModel(Field* f) :
-	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), alpha(3), cwidth(1), r(32+(8-cwidth))
+	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), alpha(5), cwidth(0.5), r(32+(4.36-cwidth))
 	//alpha:キューティクルの角度(deg)  cwidth:キューティクルの幅(μm)  r:毛の半径(μm)(半径+キューティクルが重なる領域)
 {
 	alphaR = alpha * PI / 180;
