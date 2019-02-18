@@ -19,6 +19,8 @@ public:
 	Field(int width, int height, double h_u, int pml);
 
 	bool sig;	//吸収係数(色素)の有無
+	bool ep;	//付着物質があるかどうか
+	double eps3;	//付着物質の誘電率
 
 	//計算領域にしかアクセスできないインデックス関数(負の数をしていすればいける)
 	int index(const int& i, const int& j){

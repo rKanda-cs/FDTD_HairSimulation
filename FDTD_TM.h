@@ -44,23 +44,28 @@ protected:
 
 	//ゲッター(インライン化することでオーバーヘッド削減, なるか知らんけど)
 	Complex& EZ(const int &i, const int &j, const int &t){
-		return Ez[pmlIndex(i,j,t)];
+//		return Ez[pmlIndex(i,j,t)];
+		return Ez[pmlIndex(i, j)];				//時間領域のメモリを省略する場合
 	};
 
 	Complex& HX(const int &i, const int &j, const int &t){
-		return Hx[pmlIndex(i,j,t)];
+//		return Hx[pmlIndex(i,j,t)];
+		return Hx[pmlIndex(i, j)];
 	};
 
 	Complex& HY(const int &i, const int &j, const int &t){
-		return Hy[pmlIndex(i,j,t)];
+//		return Hy[pmlIndex(i,j,t)];
+		return Hy[pmlIndex(i, j)];
 	};
 
 	Complex& EZX(const int &i, const int &j, const int &t){
-		return Ezx[pmlIndex(i,j,t)];
+//		return Ezx[pmlIndex(i,j,t)];
+		return Ezx[pmlIndex(i, j)];
 	}
 	
 	Complex& EZY(const int &i, const int &j, const int &t){
-		return Ezy[pmlIndex(i,j,t)];
+//		return Ezy[pmlIndex(i,j,t)];
+		return Ezy[pmlIndex(i, j)];
 	}
 
 	Complex& EZ(const int &i, const int &j) {

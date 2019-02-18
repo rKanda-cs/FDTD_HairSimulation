@@ -101,7 +101,11 @@ public:
 /*
 		if ((int)time == 1)
 			modelCheck();		//U—‘Ìƒ‚ƒfƒ‹‚ğcapture‚µ‚ÄI—¹
-*/		
+*/
+/*
+		if ((int)time == 1)
+			modelCheck2();		//“r’†’iŠK‚ğcapture
+*/
 /*
 		if (((int)time) % 100 == 1) {
 			ostringstream oss;
@@ -117,6 +121,7 @@ protected:
 	void draw(Complex *p, Complex *q);
 	void draw_model();
 	void modelCheck();
+	void modelCheck2();
 
 	//---------------------------------------------------------//
 	//--------------------“üË”g-------------------------------//

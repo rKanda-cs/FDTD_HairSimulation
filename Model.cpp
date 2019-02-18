@@ -1,5 +1,8 @@
 #include"Model.h"
 #include"Field.h"
+#include<time.h>
+#include<fstream>
+#include<stdlib.h>
 
 /*---------------------------------------------*/
 /*--------------円柱Mie散乱--------------------*/
@@ -54,33 +57,189 @@ double FazzyMieModel::calcEPS(const double& x, const double& y, enum INTEG f){
 /*--------------多層膜-------------------------*/
 /*---------------------------------------------*/
 FazzySlabModel::FazzySlabModel(Field* f):
-FazzyModel(f), ep1(2.0*2.0*EPSILON_0_S), ep2(EPSILON_0_S), width1(250), width2(50)
+FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), width1(530), width2(500), layer(7)
+//[width1]nm間隔で[width2]nmのスラブを[layer]枚入れる  //隙間=width1-width2
 {
+//	pain = true;
+	pain = false;
+
+/*	cout << "random number" << endl;		// 層の乱数調整
+	for (int i = 0; i < layer; i++) {
+		random[i] = ((rand() % 5) - 4) * 20;
+		cout << random[i] << endl;
+	}
+*/
+	if (pain == true) {
+		cout << "cuticle scratch" << endl;
+
+		//--- 数値指定の場合 ---//
+		lay[6] = 12; lay[5] = -1; lay[4] = -1; lay[3] = 6; lay[2] = -1; lay[1] = -1; lay[0] = 0;
+		for (int i = layer; i > 0; i--) {
+			cout << "slab" << i << " " << lay[i-1] << "deg" << endl;
+		}
+		//----------------------//
+/*
+		//--- ランダム指定の場合 ---//
+		srand((unsigned int)time(NULL));
+
+		lay[6] = 25 + (int)(rand()*(30 - 25 + 1.0) / (1.0 + RAND_MAX));
+		cout << "slab7 " << lay[6] << "deg" << endl;
+		for (int i = 5; i > 0; i--) {
+			int t = 1 + (int)(rand()*(10 - 1 + 1.0) / (1.0 + RAND_MAX));
+			lay[i] = lay[i + 1] - t;
+			if (lay[i] < 0)	lay[i] = 0;
+			cout << "slab" << i+1 << " " << lay[i] << "deg" << endl;
+		}
+		lay[0] = 0;
+		cout << "slab1 " << lay[0] << "deg" << endl;
+		//--------------------------//
+*/
+
+		for (int i = 0; i < 7; i++) {
+			lay[i] = lay[i] * PI / 180;
+			cout << lay[i] << endl;
+		}
+	}
+
+	else if (pain == false) {
+		lay[0] = 1; lay[1] = 1; lay[2] = 1; lay[3] = 1; lay[4] = 1; lay[5] = 1; lay[6] = 1;		// 層あり = 1  層なし = 0
+	}
 }
 
 double FazzySlabModel::calcEPS(const double& x, const double& y, enum INTEG f){
-//左100nmから,250nm間隔で50nmのスラブを入れていく  **左250nmから(L70.71)10nmスラブに変更(L73)
 //多層膜
-	
+	double h = 0;  //余白[nm]
+
 	double mx = x - mField->getNpml(); //計算領域内へ写像
 	double my = y - mField->getNpml();
 
-	if(mx < 0 || my < 0 || mx >= mField->getNx() || my >= mField->getNy() ) return EPSILON_0_S;
+	if(mx < 0 || my < 0 || mx >= mField->getNx() || my >= mField->getNy() ) return EPSILON_0_S;		// 計算範囲外
+//	if (mx < mField->nanoToCell(h) || mx >= mField->getNx() - mField->nanoToCell(h))	return ep2;		// 左右の余白
 
-	int k    = (int)(mField->cellToNano(mx) - 250)%250;
-	double l =      (mField->cellToNano(mx) - 250)/250;
+//-----------------------------------------
+/*
+	// 隙間なし(対照実験1)
+	if (my < mField->nanoToCell(h) || my >= mField->getNx() - mField->nanoToCell(h))	return ep2;
+	return ep1;
+*/
 
-	if( k > 0 && k <=10 && l < 5)
-		return ep1;
-	else
+/*
+	// CMC空間を同じ誘電率で埋める場合(対照実験2)
+	if (my < mField->nanoToCell((width2 * layer) + (width1 - width2)*(layer - 1)))	return ep1;
+	return ep2;
+*/
+//-----------------------------------------
+
+	if (pain == true) {		// 剥がれによる傾きあり
+		for (int i = 0; i < layer; i++) {		// iの最大値 = スラブの枚数
+/*			// Fuzzyなし(Staircaseモデル)
+			if (mField->cellToNano(my) > (mField->cellToNano(mx) * tan(lay[i]) + (h + i*width1)) && mField->cellToNano(my) < (mField->cellToNano(mx) * tan(lay[i]) + (h + i*width1 + width2)))
+				return ep1;
+*/
+			// ver2 剥がれとめくれの両立
+			if (mField->cellToNano(my) > (mField->cellToNano(mx) * tan(lay[i]) + (h + i*width1)) && mField->cellToNano(my) < (mField->cellToNano(mx) * tan(lay[i]) + (h + i*width1 + width2))) {
+				if (lay[i] < 0)	// 例外処理で抜く層を指定
+					return ep2;
+				else
+					return ep1;
+			}
+			
+
+/*			// Fuzzyモデル
+			double dy11 = my - (tan(lay[i]) * mx +			(mField->nanoToCell(h) + i*mField->nanoToCell(width1)));
+			double dy12 = my - (tan(lay[i]) * (mx + 1) +	(mField->nanoToCell(h) + i*mField->nanoToCell(width1)));
+			double dy21 = my - (tan(lay[i]) * mx +			(mField->nanoToCell(h) + i*mField->nanoToCell(width1) + mField->nanoToCell(width2)));
+			double dy22 = my - (tan(lay[i]) * (mx + 1) +	(mField->nanoToCell(h) + i*mField->nanoToCell(width1) + mField->nanoToCell(width2)));
+			double s;
+
+			if ((dy21 < -1 && dy22 < -1) && (dy11 > 0 && dy12 > 0)) return ep1;		//キューティクル直線の内側 (2)
+
+			if (dy11 <= 0 && dy12 <= 0) {
+				if (fabs(dy11) <= 1 && fabs(dy12) <= 1) {
+					s = (fabs(dy11) + fabs(dy12)) * 1.0 / 2.0;
+					return ep2 * s + ep1 * (1 - s);		// (3)
+				}
+				if (fabs(dy11) < 1 && fabs(dy12) > 1) {
+					s = (1 - fabs(dy11)) * (my / tan(lay[i]) - mx) / 2.0;
+					return ep1 * s + ep2 * (1 - s);		// (4)
+				}
+			}
+			if (dy11 > 0 && dy12 < 0) {
+				s = fabs(dy12) * ((mx + 1) - my / tan(lay[i])) / 2.0;
+				return ep2 * s + ep1 * (1 - s);		// (5)
+			}
+/* なぜかエラーになる　以下要改善
+			if (dy21 <= 0 && dy22 <= 0) {
+				if (fabs(dy21) <= 1 && fabs(dy22) <= 1) {
+					s = (fabs(dy21) + fabs(dy22)) * 1.0 / 2.0;
+					return ep1 * s + ep2 * (1 - s);		// (3)
+				}
+				if (fabs(dy21) < 1 && fabs(dy22) > 1) {
+					s = (1 - fabs(dy21)) * (my / tan(lay[i]) - mx) / 2.0;
+					return ep2 * s + ep1 * (1 - s);		// (4)
+				}
+			}
+			if (dy21 > 0 && dy22 < 0) {
+				s = fabs(dy22) * ((mx + 1) - my / tan(lay[i])) / 2.0;
+				return ep1 * s + ep2 * (1 - s);		// (5)
+			}
+*/		}
 		return ep2;
+	}
+
+	else if(pain == false) {	// 正常
+		int k = (int)(mField->cellToNano(my) - h) % width1;
+		double l = (mField->cellToNano(my) - h) / width1;
+
+/*		// ver1 -----------------------//
+		if (k > 0 && k <= width2 && l < layer)		// l = スラブの枚数
+			return ep1;
+		else
+			return ep2;
+		// ----------------------------//
+*/
+		// ver2 抜け層あり ------------//
+		if (k > 0 && k <= width2 && l < layer) {		// l = スラブの枚数
+			for (int i = 0; i < layer; i++) {
+				if (l > i && l <= i + 1) {
+					if (lay[i] == 1)	return ep1;
+					else if (lay[i] == 0)	return ep2;
+				}
+			}
+		}
+		else
+			return ep2;
+		// ----------------------------//
+
+/*		// ver3 乱数処理 --------------//
+		for (int i = 0; i < layer; i++) {
+			if (l > i && l <= i + 1) {
+				if (k > 0 && k <= width2 + random[i] && l < layer) {		// l = スラブの枚数
+					if (lay[i] == 1)	return ep1;
+					else if (lay[i] == 0)	return ep2;
+				}
+				else
+					return ep2;
+			}
+		}
+		return ep2;
+*/		// ----------------------------//
+	}
 
 }
 
 string FazzySlabModel::mkdir(string root){
 	_mkdir((root + "SlabModel").c_str());
+	string name;
 
-	string name = "SlabModel/" + mField->getStringCellInfo();
+	if (pain == false) {
+		name = "SlabModel/" + mField->getStringCellInfo();		//傷みなしの場合
+	}
+	else if (pain == true) {
+		_mkdir((root + "SlabModel/scratch").c_str());			//傷みありの場合
+		name = "SlabModel/scratch/" + mField->getStringCellInfo();
+	}
+
 	_mkdir((root + name).c_str());	//ディレクトリの作成
 	return name + "/";
 }
@@ -206,8 +365,9 @@ string FazzyHair_incidenceModel::mkdir(string root) {
 /*-----------縦断面(多層膜キューティクル)-----------*/
 /*--------------------------------------------------*/
 FazzyHair_incidenceLayerModel::FazzyHair_incidenceLayerModel(Field* f) :
-	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), alpha(5), cwidth(0.5), length(50), r(32), cmc(0.06)
+	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), ep3(mField->eps3),alpha(5), cwidth(0.5), length(50), r(32), cmc(0.06)
 	//alpha:キューティクルの角度(deg)  cwidth:キューティクルの厚さ(μm)  length:キューティクルの長さ(μm)	r:毛皮質範囲の半径(μm)  cmc:CMC範囲(μm)
+	//ep3:付着物質		屈折率: 水=1.33
 {
 	alphaR = alpha * PI / 180;
 	int n = length * sin(alphaR) / (cmc + cwidth);
@@ -256,7 +416,7 @@ double FazzyHair_incidenceLayerModel::calcEPS(const double& x, const double& y, 
 				return ep1;
 
 			else if (my >= tan(alphaR) * (mx - ((i + 1)*mn + (i + 1)*cn) / tan(alphaR)) + 1 && my <= tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) - 1)
-				return ep2;
+				return ep3;
 
 			else if ((my > tan(alphaR) * (mx - (i*mn + i*cn) / tan(alphaR)) - 1 && my < tan(alphaR) * (mx - (i*mn + i*cn) / tan(alphaR)) + 1)
 				|| (my > tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) - 1 && my < tan(alphaR) * (mx - (i*mn + (i + 1)*cn) / tan(alphaR)) + 1)) {
@@ -267,7 +427,7 @@ double FazzyHair_incidenceLayerModel::calcEPS(const double& x, const double& y, 
 						if (my + b / 32.0 >= tan(alphaR) * (mx + a / 32.0 - (i*mn + (i + 1)*cn) / tan(alphaR)) && my + b / 32.0 <= tan(alphaR) * (mx + a / 32.0 - (i*mn + i*cn) / tan(alphaR)) && mx <= (ly + i*mn + i*cn) / tan(alphaR))
 							s += 1;
 				s /= 32.0*32.0;
-				return ep1*s + ep2*(1 - s);
+				return ep1*s + ep3*(1 - s);
 				
 			}
 			
@@ -284,12 +444,12 @@ double FazzyHair_incidenceLayerModel::calcEPS(const double& x, const double& y, 
 						if (mx + a / 32.0 >= (my + b / 32.0 + i*mn + i*cn) / tan(alphaR) && mx <= (ly + i*mn + i*cn) / tan(alphaR))
 							s += 1;
 				s /= 32.0*32.0;
-				return ep1*s + ep2*(1 - s);
+				return ep1*s + ep3*(1 - s);
 			}	
 		}
 	}
 
-	return ep2;
+	return ep3;
 }
 
 double FazzyHair_incidenceLayerModel::calcSIG(const double& x, const double& y, const double lam, enum INTEG f) {
@@ -320,12 +480,24 @@ string FazzyHair_incidenceLayerModel::mkdir(string root) {
 	string name;
 
 	if (mField->sig == false) {
-		_mkdir((root + "HairModel/incidenceLayer").c_str());				//吸収係数なしの場合
-		name = "HairModel/incidenceLayer/" + mField->getStringCellInfo();
+		if (mField->ep == false) {
+			_mkdir((root + "HairModel/incidenceLayer").c_str());				//吸収係数なし&付着なしの場合
+			name = "HairModel/incidenceLayer/" + mField->getStringCellInfo();
+		}
+		else if (mField->ep == true) {
+			_mkdir((root + "HairModel/incidenceLayerWet").c_str());				//吸収係数なし&付着ありの場合
+			name = "HairModel/incidenceLayerWet/" + mField->getStringCellInfo();
+		}
 	}
 	else if (mField->sig == true) {
-		_mkdir((root + "HairModel/incidenceLayer_withSig").c_str());		//吸収係数ありの場合
-		name = "HairModel/incidenceLayer_withSig/" + mField->getStringCellInfo();
+		if (mField->ep == false) {
+			_mkdir((root + "HairModel/incidenceLayer_withSig").c_str());		//吸収係数あり&付着なしの場合
+			name = "HairModel/incidenceLayer_withSig/" + mField->getStringCellInfo();
+		}
+		else if (mField->ep == true) {
+			_mkdir((root + "HairModel/incidenceLayerWet_withSig").c_str());		//吸収係数あり&付着ありの場合
+			name = "HairModel/incidenceLayerWet_withSig/" + mField->getStringCellInfo();
+		}
 	}
 
 	_mkdir((root + name).c_str());	//ディレクトリの作成
@@ -404,8 +576,8 @@ string FazzyHair_NONcuticleModel::mkdir(string root) {
 /*-----------横断面-----------*/
 /*----------------------------*/
 FazzyHair_normalModel::FazzyHair_normalModel(Field* f) :
-	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), e(0.6), r(32)
-	//a:離心率  r:毛の半径(μm)
+	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S), e(0), r(40)
+	//e:離心率  r:毛の半径(μm)
 {
 	cout << "楕円の離心率 = " + to_s((double)e) << endl;
 }
@@ -457,6 +629,55 @@ string FazzyHair_normalModel::mkdir(string root) {
 	_mkdir((root + name).c_str());	//ディレクトリの作成
 	
 	name = "HairModel/normalplane/e=" + to_s((double)e) + "/" + mField->getStringCellInfo();
+	_mkdir((root + name).c_str());	//ディレクトリの作成
+	return name + "/";
+}
+
+
+/*---------------------------------------------*/
+/*--------------morphoModel-------------------------*/
+/*---------------------------------------------*/
+FazzyMorphoModel::FazzyMorphoModel(Field* f) :
+	FazzyModel(f), ep1(1.55*1.55*EPSILON_0_S), ep2(EPSILON_0_S)
+{
+	ifstream ifp("morphoModel_cell.txt");
+//	ifstream ifp("morphoModel_cell2.csv");
+
+	if (!ifp) {
+		cout << "not found input File" << endl;
+		exit(1);
+	}
+	
+	for (int y = 0; y < Y; y++) {
+		for (int x = 0; x < X; x++) {
+			ifp >> p[x][y];
+		}
+	}
+}
+
+double FazzyMorphoModel::calcEPS(const double& x, const double& y, enum INTEG f) {
+	//多層膜
+	double H = 1500;  //余白[nm]
+	double h = mField->nanoToCell(H);
+
+	double mx = x - mField->getNpml(); //計算領域内へ写像
+	double my = y - mField->getNpml();
+
+	if (mx < 0 || my < 0 || mx >= mField->getNx() || my >= mField->getNy()) return EPSILON_0_S;
+	if (mx < h || mx >= mField->getNx() - h)	return ep2;
+
+	mx -= h;
+	if (p[(int)mx][(int)my] == 0)
+		return ep2;
+	else
+		return ep1;
+
+}
+
+string FazzyMorphoModel::mkdir(string root) {
+	_mkdir((root + "MorphoModel").c_str());
+
+	string name = "MorphoModel/" + mField->getStringCellInfo();
 	_mkdir((root + name).c_str());	//ディレクトリの作成
 	return name + "/";
 }

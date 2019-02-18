@@ -30,9 +30,10 @@ bool NsFDTD_TM::calc() {
 	if (time > maxStep) {
 		//MiePrint(Ez, "time"+to_s(maxStep)+"_PML"+to_s(mField->getNpml()) + "_NsTM_");
 		//capture(to_s(time));
-		capture(to_s(Inv_Nano_S(lambda_s)));
-//		if ((int)Inv_Nano_S(lambda_s) == 380 | (int)Inv_Nano_S(lambda_s) == 440 | (int)Inv_Nano_S(lambda_s) == 550 | (int)Inv_Nano_S(lambda_s) == 700)
-//			capture(to_s(wave_angle) + "deg_" + to_s(Inv_Nano_S(lambda_s)) + "nm");
+		//capture(to_s(Inv_Nano_S(lambda_s)));
+		if ((int)Inv_Nano_S(lambda_s) == 380 || (int)Inv_Nano_S(lambda_s) == 440 || (int)Inv_Nano_S(lambda_s) == 550 || (int)Inv_Nano_S(lambda_s) == 700)
+	//	if ((int)Inv_Nano_S(lambda_s) == 480)
+			capture(to_s(wave_angle) + "deg_" + to_s(Inv_Nano_S(lambda_s)) + "nm");
 		return EndTask();
 	}
 
@@ -93,14 +94,14 @@ void NsFDTD_TM::PMLfield() {
 			double sig_xx = mu / EPSILON_0_S * sig_x;
 			double sig_y = mField->sigmaY(i, j);
 			double sig_yy = mu / EPSILON_0_S * sig_y;
-
+/*
 			if (SIG(i, j) != 0) {
 				sig_x = SIG(i, j);
 				sig_y = SIG(i, j);
 				sig_xx = mu / EPSILON_0_S * sig_x;
 				sig_yy = mu / EPSILON_0_S * sig_y;
 			}
-			
+*/			
 			double ax = sig_x * DT_S / (2 * EPSEZ(i, j));
 			double ay = sig_y * DT_S / (2 * EPSEZ(i, j));
 			double axx = sig_xx * DT_S / (2 * mu);

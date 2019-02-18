@@ -17,26 +17,44 @@
 Solver::Solver()
 	:H_S(1.0), DT_S(1.0)
 {
-	mField = new Field(32000, 128000, 50, 10); //width, height, Δh, Npml
-	LambdaRange    = Range<double>(Nano_S(380), Nano_S(700), Nano_S(10));
-	WaveAngleRange = Range<int>   (135, 135, 10);
+	//mField = new Field(200, 200, 1, 10); //width, height, Δh, Npml		//Mieモデル用
+	//mField = new Field(4000, 4000, 10, 8); //width, height, Δh, Npml				//Morphoモデル用
+	//mField = new Field(16000, 8000, 10, 10); //width, height, Δh, Npml			//incidentLayerモデルの拡大図
+	//mField = new Field(3240, 3240, 10, 20); //width, height, Δh, Npml			//slabモデル用  5枚
+	//mField = new Field(5860, 5860, 10, 20); //width, height, Δh, Npml			//slabモデル用  7枚 ver1
+	mField = new Field(10000, 7500, 20, 10); //width, height, Δh, Npml			//slabモデル用  7枚 ver2
+	//mField = new Field(128000, 128000, 100, 10); //width, height, Δh, Npml		//normalモデル用
+
+	//mField = new Field(48000, 128000, 50, 10); //width, height, Δh, Npml
+	LambdaRange    = Range<double>(Nano_S(380), Nano_S(700), Nano_S(5));
+	WaveAngleRange = Range<int>   (0, 180, 5);
 
 	SetWaveParameter( LambdaRange.MIN() );
 	wave_angle  = WaveAngleRange.MIN();
 
 	time = 0;
-	maxStep  = 8000;
+	maxStep = 5000;
 	mField->sig = false;		//吸収係数σの有無　有：true / 無：false (FazzyHair_incidence(Layer)Modelのみ選択、 その他の場合false)
+
+	//付着物質の設定
+	double ref = 1.0;			//付着物質の屈折率 (なしの場合は1.0)	水=1.33
+	mField->eps3 = ref*ref*EPSILON_0_S;
+	if(ref == 1.0)
+		mField->ep = false;		//付着なし
+	else
+		mField->ep = true;
+
 
 	n_s     = new double[mField->getNcel()];	//屈折率
 	Sig_hair = new double[mField->getNcel()];	//吸光率
 
-	//mModel	= new FazzySlabModel(mField);
+	mModel	= new FazzySlabModel(mField);
 	//mModel	= new FazzyMieModel(mField, lambda_s);
 	//mModel	= new FazzyHair_incidenceModel(mField);
-	mModel	= new FazzyHair_incidenceLayerModel(mField);
+	//mModel	= new FazzyHair_incidenceLayerModel(mField);
 	//mModel	= new FazzyHair_normalModel(mField);
 	//mModel	= new FazzyHair_NONcuticleModel(mField);
+	//mModel	= new FazzyMorphoModel(mField);
 
 	DataDir		=  "../DataSet/";
 	WorkingDir  =  "";
@@ -374,6 +392,7 @@ void Solver::draw_model(){
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glDepthMask(GL_FALSE);
 			glColor4d(0.7/(n+s), 0.7/(n+s), 0.7/(n+s), 0.6);
+//			glColor4d(0.7/n, 0.7/n, 0.7/n, 0.6);
 			glDepthMask(GL_TRUE);
 		glRectd(x*ws-1, y*hs-1, (x+1.0)*ws-1, (y+1.0)*hs-1);	
 		}
@@ -384,6 +403,11 @@ void Solver::draw_model(){
 void Solver::modelCheck() {
 	capture("../../model");
 	exit(-1);
+}
+
+void Solver::modelCheck2() {
+	if(wave_angle == 0 && Inv_Nano_S(lambda_s) == 380)
+		capture(to_s(wave_angle) + "deg_" + to_s(Inv_Nano_S(lambda_s)) + "nm_" + to_s((int)time) + "steps");
 }
 
 //-----------------データの保存----------------------//
@@ -414,24 +438,28 @@ void Solver::open_data(complex<double> *data, string name){
 #include <opencv2/highgui/highgui.hpp>
 //#include <opencv2/opencv_lib.hpp> // 静的リンクライブラリの指定
 #include <opencv2/core/core.hpp>
-#pragma comment(lib,"opencv_highgui2411.lib")
-#pragma comment(lib,"opencv_core2411.lib")
+//#include <opencv2/imgproc/imgproc.hpp>
+//#pragma comment(lib,"opencv_highgui2411.lib")
+//#pragma comment(lib,"opencv_core2411.lib")
+
 
 // @brief 現在の画面の状態をキャプチャしてpngに保存する //
 
 void Solver::capture(string name)
 {
+	using namespace cv;
+
 	int width = WINDOW_W, height = WINDOW_H;
 
-	cv::Mat cvmtx(cv::Size(width, height), CV_8UC4, cv::Scalar(0, 0, 0));//黒で初期化
+	Mat cvmtx(Size(width, height), CV_8UC4, Scalar(0, 0, 0));//黒で初期化
 																		 // 画像のキャプチャ
 	glReadBuffer(GL_FRONT);// フロントを読み込む様に設定する
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // 初期値は4
 	glReadPixels(0, 0, width, height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, (void*)cvmtx.data);
 	//上下逆にする
-	cv::flip(cvmtx, cvmtx, 0);
+	flip(cvmtx, cvmtx, 0);
 	// 画像の書き出し 
-	cv::imwrite(DataDir + name + ".jpg", cvmtx);
+	imwrite(DataDir + name + ".jpg", cvmtx);
 	cout << "image captured" << endl;
 }
 

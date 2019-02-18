@@ -15,11 +15,11 @@ FDTD_TM::FDTD_TM()
 :Solver()
 {
 	//領域確保
-	Ez  = new complex<double>[3*mField->getNcel()];		//Ez(i,j)      → Ez(i,j)
-	Hx  = new complex<double>[3*mField->getNcel()];		//Hx(i, j+0.5) → Hx(i,j)
-	Hy  = new complex<double>[3*mField->getNcel()];		//Hy(i+0.5, j) → Hy(i,j) を意味する
-	Ezx = new complex<double>[3*mField->getNcel()];
-	Ezy = new complex<double>[3*mField->getNcel()];
+	Ez  = new complex<double>[mField->getNcel()];		//Ez(i,j)      → Ez(i,j)
+	Hx  = new complex<double>[mField->getNcel()];		//Hx(i, j+0.5) → Hx(i,j)
+	Hy  = new complex<double>[mField->getNcel()];		//Hy(i+0.5, j) → Hy(i,j) を意味する
+	Ezx = new complex<double>[mField->getNcel()];
+	Ezy = new complex<double>[mField->getNcel()];
 
 	//計算用定数配列
 	C_EZ     = new double[mField->getNcel()];	//Cez(i, j)       → CEZ(i,j)
@@ -50,7 +50,7 @@ FDTD_TM::FDTD_TM()
 	B_HYm = new double[mField->getNcel()];
 
 	//領域初期化
-	for(int i=0; i<3*mField->getNcel(); i++)
+	for(int i=0; i<mField->getNcel(); i++)
 			Ez[i] = Hx[i] = Hy[i] = Ezx[i] = Ezy[i] = 0;
 
 	cout << "FDTD_TM Constructor" << endl;
@@ -93,7 +93,7 @@ FDTD_TM::~FDTD_TM(){
 void FDTD_TM::Initialize(){
 	super::Initialize();
 	//領域初期化
-	for(int i=0; i<3*mField->getNcel(); i++)
+	for(int i=0; i<mField->getNcel(); i++)
 		Ez[i] = Hx[i] = Hy[i] = Ezx[i] = Ezy[i] = 0;
 }
 

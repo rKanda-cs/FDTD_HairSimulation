@@ -30,11 +30,17 @@ public:
 
 class FazzySlabModel :public FazzyModel{
 	const double ep1, ep2;
-	const int width1, width2;
+	const int width1, width2, layer;
+	bool pain;
+	double lay[7];	// pain = trueのとき、剥がれの角度  pain = falseのとき、層の有無(0or1)
+	int random[7];
 public:
 	FazzySlabModel(Field*);
 	string mkdir(string root);
 	double calcEPS(const double&, const double&, enum INTEG = D_XY);
+	double calcSIG(const double&, const double&, const double lam, enum INTEG = D_XY) {
+		return 0;
+	}
 	bool update(int){
 		//return true;
 		return false;
@@ -83,7 +89,7 @@ public:
 };
 
 class FazzyHair_incidenceLayerModel :public FazzyModel {
-	const double ep1, ep2;
+	const double ep1, ep2, ep3;
 	const int alpha;
 	double alphaR, r, rn, cwidth, cn, cmc, mn, length, ln, lx, ly;
 	/*
@@ -116,6 +122,9 @@ public:
 	FazzyHair_normalModel(Field*);
 	string mkdir(string root);
 	double calcEPS(const double&, const double&, enum INTEG f);
+	double calcSIG(const double&, const double&, const double lam, enum INTEG = D_XY) {
+		return 0;
+	}
 	bool update(int) {
 		//return true;
 		return false;
@@ -134,6 +143,28 @@ public:
 	string mkdir(string root);
 	double calcEPS(const double&, const double&, enum INTEG = D_XY);
 	double calcSIG(const double&, const double&, const double lam, enum INTEG = D_XY);
+	bool update(int) {
+		//return true;
+		return false;
+	}
+	void Initialize()
+	{
+	}
+};
+
+class FazzyMorphoModel :public FazzyModel {
+	const double ep1, ep2;
+	const int X = 100;
+	const int Y = 400;
+	bool p[100][400];
+
+public:
+	FazzyMorphoModel(Field*);
+	string mkdir(string root);
+	double calcEPS(const double&, const double&, enum INTEG = D_XY);
+	double calcSIG(const double&, const double&, const double lam, enum INTEG = D_XY) {
+		return 0;
+	}
 	bool update(int) {
 		//return true;
 		return false;
